@@ -29,12 +29,3 @@ int main()
 			break;									
 	}		
 }
-/*
-	Enter your marks:45
-	Your grade is D
-	You passed , you could do better
-	Congratulations!You Are Eligible For The Next Class.
-*/
-
-
-
