@@ -27,5 +27,16 @@ int main()
 		default:
 			printf("Your grade is F\nSorry , you failed");
 			break;									
-	}		
+	}
+	if(marks>35){
+		printf("\nCongratulations!You Are Eligible For The Next Class.");
+	}else{
+		printf("\nPlease Try again next time.");
+	}
 }
+/*
+	Enter your marks:45
+	Your grade is D
+	You passed , you could do better
+	Congratulations!You Are Eligible For The Next Class.
+*/
