@@ -1,0 +1,12 @@
+#include <stdio.h>
+
+int main() 
+{
+    int N, sum;
+    printf("Enter a number N: ");
+    scanf("%d", &N);
+
+    sum = N * (N + 1) / 2;
+
+    printf("The sum of numbers from 1 to %d is: %d\n", N, sum);
+}
