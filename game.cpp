@@ -3,6 +3,28 @@
 #include <stdlib.h>
 #include <time.h>
 
+void printMap(int playerX, int playerY, int goblinX, int goblinY, int monsterAlive, int potionX, int potionY, int hasPotion, int keyX, int keyY) {
+    printf("\nDungeon Map:\n");
+    for (int y = 2; y >= 0; y--) {  // top row first
+        for (int x = 0; x < 3; x++) {
+            if (playerX == x && playerY == y && keyX == x && keyY == y) {
+                printf("[P,K] ");
+            } else if (playerX == x && playerY == y) {
+                printf("[P] ");
+            } else if (monsterAlive && goblinX == x && goblinY == y) {
+                printf("[G] ");
+            } else if (!hasPotion && potionX == x && potionY == y) {
+                printf("[H] ");
+            } else if (keyX == x && keyY == y) {
+                printf("[K] ");
+            } else {
+                printf("[ . ] ");
+            }
+        }
+        printf("\n");
+    }
+}
+
 int main() {
     char command[20];
     int hasKey = 0, hasPotion = 0;
@@ -10,17 +32,20 @@ int main() {
     int playerX = 0, playerY = 0; // player starting at (0,0)
     int goblinX, goblinY, potionX, potionY;
     int monsterAlive = 1;
+    int keyX = 2, keyY = 2; // fixed key room
 
     srand(time(0)); // random seed
 
-    // Randomly place goblin and potion in a 3x3 grid dungeon (excluding starting position)
-    do { goblinX = rand() % 3; goblinY = rand() % 3; } while (goblinX == 0 && goblinY == 0);
-    do { potionX = rand() % 3; potionY = rand() % 3; } while ((potionX == 0 && potionY == 0) || (potionX == goblinX && potionY == goblinY));
+    // Randomly place goblin and potion (excluding starting position and key room)
+    do { goblinX = rand() % 3; goblinY = rand() % 3; } while ((goblinX == 0 && goblinY == 0) || (goblinX == keyX && goblinY == keyY));
+    do { potionX = rand() % 3; potionY = rand() % 3; } while ((potionX == 0 && potionY == 0) || (potionX == goblinX && potionY == goblinY) || (potionX == keyX && potionY == keyY));
 
     printf("??? Welcome to the Dungeon Adventure! ???\n");
     printf("You find yourself in a mysterious dungeon. Your goal: escape!\n");
 
     while (1) {
+        printMap(playerX, playerY, goblinX, goblinY, monsterAlive, potionX, potionY, hasPotion, keyX, keyY);
+
         printf("\nWhat do you want to do? (north/east/south/west/look/inventory/quit): ");
         scanf("%s", command);
 
@@ -41,6 +66,7 @@ int main() {
             printf("You are in a dungeon room.\n");
             if (playerX == goblinX && playerY == goblinY && monsterAlive) printf("- A goblin is here! ??\n");
             if (playerX == potionX && playerY == potionY && !hasPotion) printf("- A healing potion is here! ??\n");
+            if (playerX == keyX && playerY == keyY && !hasKey) printf("- A golden key is here! ???\n");
             if (hasKey) printf("- You have a golden key.\n");
             continue;
         } else if (strcmp(command, "inventory") == 0) {
@@ -105,8 +131,8 @@ int main() {
             }
         }
 
-        // Check escape (key room is fixed at top-right)
-        if (playerX == 2 && playerY == 2) {
+        // Check escape (key room at (2,2))
+        if (playerX == keyX && playerY == keyY) {
             if (!hasKey) {
                 printf("You find a golden key here! ???\n");
                 hasKey = 1;
