@@ -9,22 +9,21 @@
 typedef struct {
     char description[MAX_TEXT];
     char category[MAX_TEXT];
-    char date[11];        // YYYY-MM-DD
+    char date[11];      // YYYY-MM-DD
     double amount;
 } Expense;
 
-/* ---------- Utility Functions ---------- */
-
+/* ---------- Utils ---------- */
 void clearInputBuffer() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
 
-void readLine(char *buffer, int size) {
-    if (fgets(buffer, size, stdin)) {
-        size_t len = strlen(buffer);
-        if (len > 0 && buffer[len - 1] == '\n')
-            buffer[len - 1] = '\0';
+void readLine(char *buf, int size) {
+    if (fgets(buf, size, stdin)) {
+        size_t len = strlen(buf);
+        if (len && buf[len - 1] == '\n')
+            buf[len - 1] = '\0';
     }
 }
 
@@ -33,210 +32,138 @@ void pressEnter() {
     getchar();
 }
 
-/* ---------- File Handling ---------- */
-
-void loadExpenses(Expense expenses[], int *count) {
-    FILE *file = fopen(FILE_NAME, "r");
+/* ---------- File ---------- */
+void loadExpenses(Expense e[], int *n) {
+    FILE *f = fopen(FILE_NAME, "r");
     char line[512];
-    *count = 0;
+    *n = 0;
+    if (!f) return;
 
-    if (!file) return;
-
-    while (fgets(line, sizeof(line), file) && *count < MAX_EXPENSES) {
-        Expense e;
-        char *token;
-
-        token = strtok(line, ",");
-        if (!token) continue;
-        strncpy(e.description, token, MAX_TEXT);
-
-        token = strtok(NULL, ",");
-        if (!token) continue;
-        strncpy(e.category, token, MAX_TEXT);
-
-        token = strtok(NULL, ",");
-        if (!token) continue;
-        strncpy(e.date, token, 11);
-
-        token = strtok(NULL, ",");
-        if (!token) continue;
-        e.amount = atof(token);
-
-        expenses[*count] = e;
-        (*count)++;
+    while (fgets(line, sizeof(line), f) && *n < MAX_EXPENSES) {
+        char *t;
+        t = strtok(line, ","); if (!t) continue; strncpy(e[*n].description, t, MAX_TEXT);
+        t = strtok(NULL, ","); if (!t) continue; strncpy(e[*n].category, t, MAX_TEXT);
+        t = strtok(NULL, ","); if (!t) continue; strncpy(e[*n].date, t, 11);
+        t = strtok(NULL, ","); if (!t) continue; e[*n].amount = atof(t);
+        (*n)++;
     }
-
-    fclose(file);
+    fclose(f);
 }
 
-void saveExpenses(Expense expenses[], int count) {
-    FILE *file = fopen(FILE_NAME, "w");
-    if (!file) {
-        printf("Error saving file!\n");
-        return;
-    }
-
-    for (int i = 0; i < count; i++) {
-        fprintf(file, "%s,%s,%s,%.2f\n",
-                expenses[i].description,
-                expenses[i].category,
-                expenses[i].date,
-                expenses[i].amount);
-    }
-
-    fclose(file);
+void saveExpenses(Expense e[], int n) {
+    FILE *f = fopen(FILE_NAME, "w");
+    if (!f) return;
+    for (int i = 0; i < n; i++)
+        fprintf(f, "%s,%s,%s,%.2f\n",
+                e[i].description, e[i].category, e[i].date, e[i].amount);
+    fclose(f);
 }
 
-/* ---------- Core Features ---------- */
+/* ---------- Core ---------- */
+void addExpense(Expense e[], int *n) {
+    if (*n >= MAX_EXPENSES) return;
 
-void addExpense(Expense expenses[], int *count) {
-    char temp[50];
+    printf("Description: ");
+    readLine(e[*n].description, MAX_TEXT);
 
-    if (*count >= MAX_EXPENSES) {
-        printf("Expense list is full.\n");
-        pressEnter();
-        return;
-    }
+    printf("Category: ");
+    readLine(e[*n].category, MAX_TEXT);
 
-    printf("Enter description: ");
-    readLine(expenses[*count].description, MAX_TEXT);
+    printf("Date (YYYY-MM-DD): ");
+    readLine(e[*n].date, 11);
 
-    printf("Enter category: ");
-    readLine(expenses[*count].category, MAX_TEXT);
+    printf("Amount: ");
+    scanf("%lf", &e[*n].amount);
+    clearInputBuffer();
 
-    printf("Enter date (YYYY-MM-DD): ");
-    readLine(expenses[*count].date, 11);
-
-    printf("Enter amount: ");
-    readLine(temp, sizeof(temp));
-    expenses[*count].amount = atof(temp);
-
-    (*count)++;
+    (*n)++;
     printf("Expense added successfully.\n");
     pressEnter();
 }
 
-void listExpenses(Expense expenses[], int count) {
-    if (count == 0) {
+void listExpenses(Expense e[], int n) {
+    if (n == 0) {
         printf("No expenses found.\n");
         pressEnter();
         return;
     }
-
-    printf("\n===== EXPENSE LIST =====\n");
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < n; i++)
         printf("%d) %s | %s | %s | Rs. %.2f\n",
-               i + 1,
-               expenses[i].description,
-               expenses[i].category,
-               expenses[i].date,
-               expenses[i].amount);
-    }
-    printf("========================\n");
+               i + 1, e[i].description, e[i].category, e[i].date, e[i].amount);
     pressEnter();
 }
 
-void showTotal(Expense expenses[], int count) {
-    double total = 0;
-    for (int i = 0; i < count; i++)
-        total += expenses[i].amount;
-
-    printf("Total Spent: Rs. %.2f\n", total);
+void showTotal(Expense e[], int n) {
+    double t = 0;
+    for (int i = 0; i < n; i++) t += e[i].amount;
+    printf("Total Spent: Rs. %.2f\n", t);
     pressEnter();
 }
 
-void totalByCategory(Expense expenses[], int count) {
-    char category[MAX_TEXT];
-    double total = 0;
-
-    printf("Enter category: ");
-    readLine(category, MAX_TEXT);
-
-    for (int i = 0; i < count; i++) {
-        if (strcmp(expenses[i].category, category) == 0)
-            total += expenses[i].amount;
-    }
-
-    printf("Total in %s: Rs. %.2f\n", category, total);
+void totalByCategory(Expense e[], int n) {
+    char cat[MAX_TEXT];
+    double t = 0;
+    printf("Category: ");
+    readLine(cat, MAX_TEXT);
+    for (int i = 0; i < n; i++)
+        if (strcmp(e[i].category, cat) == 0) t += e[i].amount;
+    printf("Total in %s: Rs. %.2f\n", cat, t);
     pressEnter();
 }
 
-void deleteExpense(Expense expenses[], int *count) {
-    int choice;
+void deleteExpense(Expense e[], int *n) {
+    int c;
+    if (*n == 0) return;
 
-    if (*count == 0) {
-        printf("No expenses to delete.\n");
-        pressEnter();
-        return;
-    }
-
-    for (int i = 0; i < *count; i++) {
+    for (int i = 0; i < *n; i++)
         printf("%d) %s | %s | %s | Rs. %.2f\n",
-               i + 1,
-               expenses[i].description,
-               expenses[i].category,
-               expenses[i].date,
-               expenses[i].amount);
-    }
+               i + 1, e[i].description, e[i].category, e[i].date, e[i].amount);
 
-    printf("Enter expense number to delete (0 cancel): ");
-    scanf("%d", &choice);
+    printf("Delete number: ");
+    scanf("%d", &c);
     clearInputBuffer();
 
-    if (choice <= 0 || choice > *count) return;
+    if (c < 1 || c > *n) return;
 
-    for (int i = choice - 1; i < *count - 1; i++)
-        expenses[i] = expenses[i + 1];
+    for (int i = c - 1; i < *n - 1; i++)
+        e[i] = e[i + 1];
+    (*n)--;
 
-    (*count)--;
-    printf("Expense deleted.\n");
+    printf("Deleted.\n");
     pressEnter();
 }
 
 /* ---------- Menu ---------- */
-
-void printMenu() {
-    printf("\n===== EXPENSE TRACKER =====\n");
-    printf("1. Add Expense\n");
-    printf("2. List Expenses\n");
-    printf("3. Show Total Spent\n");
-    printf("4. Total by Category\n");
-    printf("5. Delete Expense\n");
-    printf("6. Save & Exit\n");
-    printf("Enter your choice: ");
+void menu() {
+    printf("\n1.Add\n2.List\n3.Total\n4.Category Total\n5.Delete\n6.Save & Exit\nChoice: ");
 }
 
 /* ---------- Main ---------- */
-
 int main() {
-    Expense expenses[MAX_EXPENSES];
-    int count = 0;
-    int choice;
+    Expense e[MAX_EXPENSES];
+    int n = 0, ch;
 
-    loadExpenses(expenses, &count);
+    loadExpenses(e, &n);
 
     while (1) {
-        printMenu();
-
-        if (scanf("%d", &choice) != 1) {
+        menu();
+        if (scanf("%d", &ch) != 1) {
             clearInputBuffer();
-            printf("Invalid input.\n");
             continue;
         }
         clearInputBuffer();
 
-        switch (choice) {
-            case 1: addExpense(expenses, &count); break;
-            case 2: listExpenses(expenses, count); break;
-            case 3: showTotal(expenses, count); break;
-            case 4: totalByCategory(expenses, count); break;
-            case 5: deleteExpense(expenses, &count); break;
+        switch (ch) {
+            case 1: addExpense(e, &n); break;
+            case 2: listExpenses(e, n); break;
+            case 3: showTotal(e, n); break;
+            case 4: totalByCategory(e, n); break;
+            case 5: deleteExpense(e, &n); break;
             case 6:
-                saveExpenses(expenses, count);
-                printf("Data saved. Exiting...\n");
+                saveExpenses(e, n);
+                printf("Saved. Bye!\n");
                 return 0;
-            default:
-                printf("Invalid choice.\n");
+            default: printf("Invalid choice\n");
         }
     }
 }
